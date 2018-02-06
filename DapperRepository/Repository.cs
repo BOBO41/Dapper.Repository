@@ -34,7 +34,14 @@ namespace DapperRepository
 
         public void InsertBulk(IEnumerable<T> items)
         {
-
+            try
+            {
+                _dataContext.InsertBulk(items);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
         }
 
         public void Update(T item)
@@ -51,7 +58,14 @@ namespace DapperRepository
 
         public void UpdateBulk(IEnumerable<T> items)
         {
-
+            try
+            {
+                _dataContext.UpdateBulk(items);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
         }
 
         public void Delete(T item)
@@ -68,7 +82,14 @@ namespace DapperRepository
 
         public void DeleteBulk(IEnumerable<T> items)
         {
-
+            try
+            {
+                _dataContext.DeleteBulk(items);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex.ToString());
+            }
         }
 
         public T Find(int Id)

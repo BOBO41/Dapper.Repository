@@ -5,6 +5,7 @@ using System.Data.SqlClient;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 
 namespace DapperRepository.Providers
 {
@@ -12,8 +13,11 @@ namespace DapperRepository.Providers
     {
         #region Constant
         private const string INSERT_QUERY = "INSERT INTO [{0}]({1}) OUTPUT INSERTED.Id\r\nVALUES(@{2})";
+        private const string INSERT_BULK_QUERY = "INSERT INTO [{0}]({1}) VALUES ({2})\r\n";
         private const string UPDATE_QUERY = "UPDATE\r\n [{0}] SET {1} WHERE [{0}].[Id] = @Id";
+        private const string UPDATE_BULK_QUERY = "UPDATE [{0}] SET {1} WHERE [{0}].[Id] = @Id\r\n";
         private const string DELETE_QUERY = "DELETE FROM [{0}] WHERE [{0}].[Id] = @Id";
+        private const string DELETE_BULK_QUERY = "DELETE FROM [{0}] WHERE [{0}].[Id] IN(@Ids)";
         private const string SELECT_QUERY = "SELECT\r\n {1} FROM [{0}]";
         private const string SELECT_FIRST_QUERY = "SELECT TOP(1)\r\n {1} FROM [{0}]";
         #endregion
@@ -45,7 +49,7 @@ namespace DapperRepository.Providers
 
             return _connection;
         }
-        
+
         public virtual string InsertQuery(string tableName, object entity)
         {
             IEnumerable<string> columns = GetColumnsWithoutIdentity(entity.GetType());
@@ -56,18 +60,75 @@ namespace DapperRepository.Providers
                                  string.Join(",\r\n@", columns));
         }
 
-        public virtual string UpdateQuery(string tableName,  object entity)
+        public virtual string InsertBulkQuery(string tableName, IEnumerable<object> entities)
         {
-            IEnumerable<string> parameters = GetColumnsWithoutIdentity(entity.GetType()).Select(p => string.Format("[{0}].[{1}] = @{1}", tableName, p));
+            if (!entities.Any())
+                throw new ArgumentException("collection is empty");
+
+            IList<string> values = new List<string>();
+            StringBuilder builder = new StringBuilder();
+            IEnumerable<string> columns = GetColumnsWithoutIdentity(entities.First().GetType());
+            string formattedColumns = string.Join(", ", columns.Select(p => string.Format("[{0}].[{1}]", tableName, p)));
+
+            for (int i = 0; i < entities.Count(); i++)
+            {
+                if (i != 0 && i % 100 == 0)
+                    builder.Append("GO\r\n");
+
+                IEnumerable<string> valueColumns = columns.Select(p => string.Format("@{0}{1}", p, i + 1));
+                builder.AppendFormat(INSERT_BULK_QUERY,
+                                 tableName,
+                                 formattedColumns,
+                                 string.Join(", ", valueColumns));
+            }
+
+            return builder.ToString();
+        }
+
+        public virtual string UpdateQuery(string tableName, object entity)
+        {
+            IEnumerable<string> columns = GetColumnsWithoutIdentity(entity.GetType());
+            string formattedColumns = string.Join(",\r\n", columns.Select(p => string.Format("[{0}].[{1}] = @{1}", tableName, p)));
 
             return string.Format(UPDATE_QUERY,
                                  tableName,
-                                 string.Join(",\r\n", parameters));
+                                 formattedColumns);
+        }
+
+        public virtual string UpdateBulkQuery(string tableName, IEnumerable<object> entities)
+        {
+            if (!entities.Any())
+                throw new ArgumentException("collection is empty");
+
+            IList<string> values = new List<string>();
+            object[] entityArray = entities.ToArray();
+
+            StringBuilder builder = new StringBuilder();
+            IEnumerable<string> columns = GetColumnsWithoutIdentity(entityArray[0].GetType());
+
+            for (int i = 0; i < entityArray.Length; i++)
+            {
+                if (i != 0 && i % 100 == 0)
+                    builder.Append("GO\r\n");
+
+                IEnumerable<string> formattedColumns = columns.Select(p => string.Format("[{0}].[{1}] = @{1}{2}", tableName, p, i + 1));
+                builder.AppendFormat(UPDATE_BULK_QUERY,
+                                 tableName,
+                                 string.Join(", ", formattedColumns));
+            }
+
+            return builder.ToString();
         }
 
         public virtual string DeleteQuery(string tableName)
         {
             return string.Format(DELETE_QUERY,
+                                 tableName);
+        }
+
+        public virtual string DeleteBulkQuery(string tableName)
+        {
+            return string.Format(DELETE_BULK_QUERY,
                                  tableName);
         }
 
@@ -81,7 +142,7 @@ namespace DapperRepository.Providers
 
             if (expression != null)
             {
-                var translater = new WhereBuilder();
+                WhereBuilder translater = new WhereBuilder();
                 string whereClasure = translater.Translate(expression);
 
                 if (!string.IsNullOrEmpty(whereClasure))
@@ -101,7 +162,7 @@ namespace DapperRepository.Providers
 
             if (expression != null)
             {
-                var translater = new WhereBuilder();
+                WhereBuilder translater = new WhereBuilder();
                 string whereClasure = translater.Translate(expression);
 
                 if (!string.IsNullOrEmpty(whereClasure))

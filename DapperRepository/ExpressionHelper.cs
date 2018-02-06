@@ -7,7 +7,7 @@ namespace DapperRepository
 {
     public class ExpressionHelper
     {
-        public virtual IDictionary<string, object> GetWhereParemeters<T>(Expression<Func<T, bool>> expression) where T : BaseEntity
+        public static IDictionary<string, object> GetWhereParemeters<T>(Expression<Func<T, bool>> expression) where T : BaseEntity
         {
             IDictionary<string, object> dictionaryParams = new Dictionary<string, object>();
             FillQueryProperties(expression.Body, ExpressionType.Default, ref dictionaryParams);
@@ -15,7 +15,7 @@ namespace DapperRepository
             return dictionaryParams;
         }
 
-        private void FillQueryProperties(Expression expr, ExpressionType linkingType, ref IDictionary<string, object> dictionaryParams)
+        private static void FillQueryProperties(Expression expr, ExpressionType linkingType, ref IDictionary<string, object> dictionaryParams)
         {
             if (expr is MethodCallExpression body)
             {
