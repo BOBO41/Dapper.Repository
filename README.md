@@ -5,9 +5,9 @@ No major changes will be made except for the existing features.
 
 We've done this to make your small and repetitive tasks easier.
 
-Related table interrogation etc. will not be added.
+Relational table query(join, lazy loading) etc. will not be added.
 
-If we want our code to run fast, we have to work as much as possible and have to code our code
+If we want our code to run fast, we have to do our big business manually and consciously.
 
 # Usage
 ````
