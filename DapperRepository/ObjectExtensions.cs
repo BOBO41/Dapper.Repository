@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DapperRepository
 {
@@ -98,37 +96,19 @@ namespace DapperRepository
         {
             return obj.GetType().GetProperties().ToDictionary(x => x.Name, x => x.GetValue(obj));
         }
-
-        /// <summary>
-        /// Ensure that a string is not null
-        /// </summary>
-        /// <param name="str">Input string</param>
-        /// <returns>Result</returns>
+        
         public static string EnsureNotNull(string str)
         {
             return str ?? string.Empty;
         }
-
-        /// <summary>
-        /// Indicates whether the specified strings are null or empty strings
-        /// </summary>
-        /// <param name="stringsToValidate">Array of strings to validate</param>
-        /// <returns>Boolean</returns>
+        
         public static bool AreNullOrEmpty(params string[] stringsToValidate)
         {
             return stringsToValidate.Any(p => string.IsNullOrEmpty(p));
         }
-
-        /// <summary>
-        /// Compare two arrasy
-        /// </summary>
-        /// <typeparam name="T">Type</typeparam>
-        /// <param name="a1">Array 1</param>
-        /// <param name="a2">Array 2</param>
-        /// <returns>Result</returns>
+        
         public static bool ArraysEqual<T>(T[] a1, T[] a2)
         {
-            //also see Enumerable.SequenceEqual(a1, a2);
             if (ReferenceEquals(a1, a2))
                 return true;
 
