@@ -12,9 +12,9 @@ namespace DapperRepository.Providers
     public class SqlServerProvider : IProvider
     {
         #region Constant
-        private const string INSERT_QUERY = "INSERT INTO [{0}]({1}) OUTPUT INSERTED.Id\r\nVALUES(@{2})";
+        private const string INSERT_QUERY = "INSERT INTO [{0}]({1}) OUTPUT INSERTED.Id VALUES(@{2})";
         private const string INSERT_BULK_QUERY = "INSERT INTO [{0}]({1}) VALUES ({2})\r\n";
-        private const string UPDATE_QUERY = "UPDATE\r\n [{0}] SET {1} WHERE [{0}].[Id] = @Id";
+        private const string UPDATE_QUERY = "UPDATE [{0}] SET {1} WHERE [{0}].[Id] = @Id";
         private const string UPDATE_BULK_QUERY = "UPDATE [{0}] SET {1} WHERE [{0}].[Id] = @Id\r\n";
         private const string DELETE_QUERY = "DELETE FROM [{0}] WHERE [{0}].[Id] = @Id";
         private const string DELETE_BULK_QUERY = "DELETE FROM [{0}] WHERE [{0}].[Id] IN(@Ids)";
@@ -56,8 +56,8 @@ namespace DapperRepository.Providers
 
             return string.Format(INSERT_QUERY,
                                  tableName,
-                                 string.Join(",\r\n", columns.Select(p => string.Format("[{0}].[{1}]", tableName, p))),
-                                 string.Join(",\r\n@", columns));
+                                 string.Join(", ", columns.Select(p => string.Format("[{0}].[{1}]", tableName, p))),
+                                 string.Join(", @", columns));
         }
 
         public virtual string InsertBulkQuery(string tableName, IEnumerable<object> entities)
@@ -88,7 +88,7 @@ namespace DapperRepository.Providers
         public virtual string UpdateQuery(string tableName, object entity)
         {
             IEnumerable<string> columns = GetColumnsWithoutIdentity(entity.GetType());
-            string formattedColumns = string.Join(",\r\n", columns.Select(p => string.Format("[{0}].[{1}] = @{1}", tableName, p)));
+            string formattedColumns = string.Join(", ", columns.Select(p => string.Format("[{0}].[{1}] = @{1}", tableName, p)));
 
             return string.Format(UPDATE_QUERY,
                                  tableName,

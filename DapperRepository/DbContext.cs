@@ -23,6 +23,8 @@ namespace DapperRepository
         #region Ctor
         public DataContext(string connectionName)
         {
+            Check.IsEmpty(connectionName);
+
             var connectionString = ConfigurationManager.ConnectionStrings[connectionName];
 
             _provider = ProviderHelper.GetProvider(connectionString.ProviderName);
@@ -39,6 +41,8 @@ namespace DapperRepository
         /// <returns></returns>
         protected virtual IDictionary<string, object> GetParameters<T>(IEnumerable<T> items)
         {
+            Check.IsNullOrEmpty(items);
+
             var parameters = new Dictionary<string, object>();
             var entityArray = items.ToArray();
             var entityType = entityArray[0].GetType();
@@ -64,7 +68,7 @@ namespace DapperRepository
         /// <param name="transaction"></param>
         public virtual void Insert<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
         {
-            if (item == null) throw new ArgumentNullException("item");
+            Check.IsNull(item);
 
             string commandText = _provider.InsertQuery(typeof(T).Name, item);
 
@@ -78,15 +82,15 @@ namespace DapperRepository
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
         /// <param name="transaction"></param>
-        public virtual void InsertBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
+        public virtual int InsertBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
         {
-            if (items == null || !items.Any()) throw new ArgumentException("Collection can not be null or empty");
+            Check.IsNullOrEmpty(items);
 
             string commandText = _provider.InsertBulkQuery(typeof(T).Name, items);
             var parameters = GetParameters(items);
 
             //execute
-            _connection.Execute(commandText, parameters, transaction);
+            return _connection.Execute(commandText, parameters, transaction);
         }
 
         /// <summary>
@@ -95,14 +99,14 @@ namespace DapperRepository
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
         /// <param name="transaction"></param>
-        public virtual void Update<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
+        public virtual int Update<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
         {
-            if (item == null) throw new ArgumentNullException("item");
+            Check.IsNull(item);
 
             string commandText = _provider.UpdateQuery(typeof(T).Name, item);
 
             //execute
-            _connection.Execute(commandText, item, transaction);
+            return _connection.Execute(commandText, item, transaction);
         }
 
         /// <summary>
@@ -111,15 +115,15 @@ namespace DapperRepository
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
         /// <param name="transaction"></param>
-        public virtual void UpdateBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
+        public virtual int UpdateBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
         {
-            if (items == null || !items.Any()) throw new ArgumentException("Collection can not be null or empty");
+            Check.IsNullOrEmpty(items);
 
             string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
             var parameters = GetParameters(items);
 
             //execute
-            _connection.Execute(commandText, parameters, transaction);
+           return _connection.Execute(commandText, parameters, transaction);
         }
 
         /// <summary>
@@ -128,14 +132,14 @@ namespace DapperRepository
         /// <typeparam name="T"></typeparam>
         /// <param name="item"></param>
         /// <param name="transaction"></param>
-        public virtual void Delete<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
+        public virtual int Delete<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
         {
-            if (item == null) throw new ArgumentNullException("item");
+            Check.IsNull(item);
 
             string commandText = _provider.DeleteQuery(typeof(T).Name);
 
             //execute
-            _connection.Execute(commandText, new { item.Id }, transaction);
+            return _connection.Execute(commandText, new { item.Id }, transaction);
         }
 
         /// <summary>
@@ -144,15 +148,15 @@ namespace DapperRepository
         /// <typeparam name="T"></typeparam>
         /// <param name="items"></param>
         /// <param name="transaction"></param>
-        public virtual void DeleteBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
+        public virtual int DeleteBulk<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
         {
-            if (items == null || !items.Any()) throw new ArgumentException("Collection can not be null or empty");
+            Check.IsNullOrEmpty(items);
 
             string commandText = _provider.DeleteBulkQuery(typeof(T).Name);
             var parameters = items.Select(x => x.Id).ToArray();
 
             //execute
-            _connection.Execute(commandText, new { Ids = parameters });
+            return _connection.Execute(commandText, new { Ids = parameters });
         }
 
         /// <summary>
@@ -206,10 +210,12 @@ namespace DapperRepository
         /// <param name="commandText"></param>
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
-        public virtual void Execute(string commandText, object parameters = null, IDbTransaction transaction = null)
+        public virtual int Execute(string commandText, object parameters = null, IDbTransaction transaction = null)
         {
+            Check.IsNullOrEmpty(commandText);
+
             //execute
-            _connection.Execute(commandText, parameters, transaction);
+            return _connection.Execute(commandText, parameters, transaction);
         }
 
         /// <summary>
@@ -221,6 +227,8 @@ namespace DapperRepository
         /// <returns></returns>
         public virtual IDataReader ExecuteReader(string commandText, object parameters = null, IDbTransaction transaction = null)
         {
+            Check.IsNullOrEmpty(commandText);
+
             //execute reader
             return _connection.ExecuteReader(commandText, parameters, transaction);
         }
@@ -235,6 +243,8 @@ namespace DapperRepository
         /// <returns></returns>
         public virtual T ExecuteScalar<T>(string commandText, object parameters = null, IDbTransaction transaction = null) where T : BaseEntity
         {
+            Check.IsNullOrEmpty(commandText);
+
             //execute scalar
             return _connection.ExecuteScalar<T>(commandText, parameters, transaction);
         }
@@ -245,10 +255,12 @@ namespace DapperRepository
         /// <param name="storedProcedureName"></param>
         /// <param name="parameters"></param>
         /// <param name="transaction"></param>
-        public virtual void ExecuteProcedure(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        public virtual int ExecuteProcedure(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
         {
+            Check.IsNullOrEmpty(storedProcedureName);
+
             //execute
-            _connection.Execute(sql: storedProcedureName,
+            return _connection.Execute(sql: storedProcedureName,
                 param: parameters,
                 transaction: transaction,
                 commandType: CommandType.StoredProcedure);
@@ -263,6 +275,8 @@ namespace DapperRepository
         /// <returns></returns>
         public virtual IDataReader ExecuteReaderProcedure(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
         {
+            Check.IsNullOrEmpty(storedProcedureName);
+
             //execute reader
             return _connection.ExecuteReader(sql: storedProcedureName,
                 param: parameters,
@@ -280,6 +294,8 @@ namespace DapperRepository
         /// <returns></returns>
         public virtual T ExecuteScalarProcedure<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : BaseEntity
         {
+            Check.IsNullOrEmpty(storedProcedureName);
+
             //execute scalar
             return _connection.ExecuteScalar<T>(sql: storedProcedureName,
                 param: parameters,

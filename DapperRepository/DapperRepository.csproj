@@ -50,9 +50,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BaseEntity.cs" />
+    <Compile Include="Check.cs" />
     <Compile Include="ExpressionHelper.cs" />
     <Compile Include="IDataContext.cs" />
     <Compile Include="IRepository.cs" />
+    <Compile Include="ObjectExtensions.cs" />
     <Compile Include="Providers\MySql\MySqlProvider.cs" />
     <Compile Include="Providers\PostgreSql\PostgreSqlProvider.cs" />
     <Compile Include="Providers\ProviderHelper.cs" />
