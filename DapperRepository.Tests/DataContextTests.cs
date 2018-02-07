@@ -1,12 +1,13 @@
-﻿using System;
+﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
 
 namespace DapperRepository.Tests
 {
     [TestClass]
     public class DataContextTests
     {
+        #region Context
         [TestMethod]
         public void InstanceCreation()
         {
@@ -38,7 +39,9 @@ namespace DapperRepository.Tests
 
             context.Dispose();
         }
+        #endregion
 
+        #region Sync Methods
         [TestMethod]
         public void Insert()
         {
@@ -113,5 +116,83 @@ namespace DapperRepository.Tests
 
             context.Dispose();
         }
+        #endregion
+
+        #region Async Methods
+        [TestMethod]
+        public async Task InsertAsync()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var product = new Product();
+            await context.InsertAsync(product);
+
+            Assert.AreNotEqual(product.Id, 0);
+
+            context.Dispose();
+        }
+
+        public async Task InsertBulkAsync()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var products = new List<Product> { new Product(), new Product(), new Product() };
+            int rowCount = await context.InsertBulkAsync(products);
+
+            Assert.AreNotEqual(rowCount, 0);
+
+            context.Dispose();
+        }
+
+        [TestMethod]
+        public async Task UpdateAsync()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var product = new Product();
+            await context.UpdateAsync(product);
+
+            Assert.AreNotEqual(product.Id, 0);
+
+            context.Dispose();
+        }
+
+        public async Task UpdateBulkAsync()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var products = new List<Product> { new Product(), new Product(), new Product() };
+            int rowCount = await context.UpdateBulkAsync(products);
+
+            Assert.AreNotEqual(rowCount, 0);
+
+            context.Dispose();
+        }
+
+        [TestMethod]
+        public async Task DeleteAsync()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var product = new Product();
+            await context.DeleteAsync(product);
+
+            Assert.AreNotEqual(product.Id, 0);
+
+            context.Dispose();
+        }
+
+        public async Task DeleteBulkAsync()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var products = new List<Product> { new Product(), new Product(), new Product() };
+            int rowCount = await context.DeleteBulkAsync(products);
+
+            Assert.AreNotEqual(rowCount, 0);
+
+            context.Dispose();
+        }
+        #endregion
     }
 }

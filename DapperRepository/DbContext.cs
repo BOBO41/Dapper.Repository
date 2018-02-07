@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 
 namespace DapperRepository
 {
@@ -298,6 +299,155 @@ namespace DapperRepository
 
             //execute scalar
             return _connection.ExecuteScalar<T>(sql: storedProcedureName,
+                param: parameters,
+                transaction: transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+        #endregion
+
+        #region Async Methods
+        public async Task InsertAsync<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNull(item);
+
+            string commandText = _provider.InsertQuery(typeof(T).Name, item);
+
+            //execute
+            item.Id = await _connection.ExecuteScalarAsync<int>(commandText, item, transaction);
+        }
+
+        public async Task<int> InsertBulkAsync<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNullOrEmpty(items);
+
+            string commandText = _provider.InsertBulkQuery(typeof(T).Name, items);
+            var parameters = GetParameters(items);
+
+            //execute
+            return await _connection.ExecuteAsync(commandText, parameters, transaction);
+        }
+
+        public async Task<int> UpdateAsync<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNull(item);
+
+            string commandText = _provider.UpdateQuery(typeof(T).Name, item);
+
+            //execute
+            return await _connection.ExecuteAsync(commandText, item, transaction);
+        }
+
+        public async Task<int> UpdateBulkAsync<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNullOrEmpty(items);
+
+            string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
+            var parameters = GetParameters(items);
+
+            //execute
+            return await _connection.ExecuteAsync(commandText, parameters, transaction);
+        }
+
+        public async Task<int> DeleteAsync<T>(T item, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNull(item);
+
+            string commandText = _provider.DeleteQuery(typeof(T).Name);
+
+            //execute
+            return await _connection.ExecuteAsync(commandText, new { item.Id }, transaction);
+        }
+
+        public async Task<int> DeleteBulkAsync<T>(IEnumerable<T> items, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNullOrEmpty(items);
+
+            string commandText = _provider.UpdateBulkQuery(typeof(T).Name, items);
+            var parameters = GetParameters(items);
+
+            //execute
+            return await _connection.ExecuteAsync(commandText, parameters, transaction);
+        }
+
+        public async Task<T> FindAsync<T>(int Id) where T : BaseEntity
+        {
+            string commandText = _provider.SelectFirstQuery<T>(t => t.Id == Id, typeof(T).Name);
+
+            //execute first query
+            return await _connection.QueryFirstAsync<T>(commandText, new { Id });
+        }
+
+        public async Task<T> FindAsync<T>(Expression<Func<T, bool>> expression) where T : BaseEntity
+        {
+            string commandText = _provider.SelectFirstQuery<T>(expression, typeof(T).Name);
+            var parameters = ExpressionHelper.GetWhereParemeters(expression);
+
+            //execute first query
+            return await _connection.QueryFirstAsync<T>(commandText, parameters);
+        }
+
+        public async Task<IEnumerable<T>> FindAllAsync<T>(Expression<Func<T, bool>> expression) where T : BaseEntity
+        {
+            IEnumerable<T> items = new List<T>();
+            string commandText = _provider.SelectQuery<T>(expression, typeof(T).Name);
+            var parameters = ExpressionHelper.GetWhereParemeters(expression);
+
+            //execute query
+            return await _connection.QueryAsync<T>(commandText, parameters);
+        }
+
+        public async Task<int> ExecuteAsync(string commandText, object parameters = null, IDbTransaction transaction = null)
+        {
+            Check.IsNullOrEmpty(commandText);
+
+            //execute
+            return await _connection.ExecuteAsync(commandText, parameters, transaction);
+        }
+
+        public async Task<IDataReader> ExecuteReaderAsync(string commandText, object parameters = null, IDbTransaction transaction = null)
+        {
+            Check.IsNullOrEmpty(commandText);
+
+            //execute reader
+            return await _connection.ExecuteReaderAsync(commandText, parameters, transaction);
+        }
+
+        public async Task<T> ExecuteScalarAsync<T>(string commandText, object parameters = null, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNullOrEmpty(commandText);
+
+            //execute reader
+            return await _connection.ExecuteScalarAsync<T>(commandText, parameters, transaction);
+        }
+
+        public async Task<int> ExecuteProcedureAsync(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        {
+            Check.IsNullOrEmpty(storedProcedureName);
+
+            //execute
+            return await _connection.ExecuteAsync(sql: storedProcedureName,
+                param: parameters,
+                transaction: transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<IDataReader> ExecuteReaderProcedureAsync(string storedProcedureName, object parameters = null, IDbTransaction transaction = null)
+        {
+            Check.IsNullOrEmpty(storedProcedureName);
+
+            //execute reader
+            return await _connection.ExecuteReaderAsync(sql: storedProcedureName,
+                param: parameters,
+                transaction: transaction,
+                commandType: CommandType.StoredProcedure);
+        }
+
+        public async Task<T> ExecuteScalarProcedureAsync<T>(string storedProcedureName, object parameters = null, IDbTransaction transaction = null) where T : BaseEntity
+        {
+            Check.IsNullOrEmpty(storedProcedureName);
+
+            //execute scalar
+            return await _connection.ExecuteScalarAsync<T>(sql: storedProcedureName,
                 param: parameters,
                 transaction: transaction,
                 commandType: CommandType.StoredProcedure);
