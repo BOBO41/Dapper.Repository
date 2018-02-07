@@ -19,7 +19,7 @@ namespace DapperRepository.Providers
         private const string DELETE_QUERY = "DELETE FROM [{0}] WHERE [{0}].[Id] = @Id";
         private const string DELETE_BULK_QUERY = "DELETE FROM [{0}] WHERE [{0}].[Id] IN(@Ids)";
         private const string SELECT_QUERY = "SELECT\r\n {1} FROM [{0}]";
-        private const string SELECT_FIRST_QUERY = "SELECT TOP(1)\r\n {1} FROM [{0}]";
+        private const string SELECT_FIRST_QUERY = "SELECT TOP(1)\r\n{1} FROM [{0}]";
         #endregion
 
         #region Fields

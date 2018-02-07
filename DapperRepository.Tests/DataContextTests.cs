@@ -105,6 +105,7 @@ namespace DapperRepository.Tests
             context.Dispose();
         }
 
+        [TestMethod]
         public void DeleteBulk()
         {
             DataContext context = new DataContext("DbConnection");
@@ -115,6 +116,16 @@ namespace DapperRepository.Tests
             Assert.AreNotEqual(rowCount, 0);
 
             context.Dispose();
+        }
+
+        [TestMethod]
+        public void Find()
+        {
+            DataContext context = new DataContext("DbConnection");
+
+            var product = context.Find<Product>(x => x.Id > 0 );
+            
+            Assert.AreNotEqual(product, null);
         }
         #endregion
 

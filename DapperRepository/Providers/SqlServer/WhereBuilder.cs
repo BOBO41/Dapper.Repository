@@ -10,24 +10,24 @@ namespace DapperRepository.Providers
     {
         public string Translate<T>(Expression<Func<T, bool>> expression)
         {
-            return Recurse(expression.Body, true);
+            return Recurse(expression.Body, typeof(T).Name);
         }
 
-        private string Recurse(Expression expression, bool isUnary = false, bool quote = true)
+        private string Recurse(Expression expression, string tableName, bool isUnary = false)
         {
             if (expression is UnaryExpression unary)
             {
-                var right = Recurse(unary.Operand, true);
-                return string.Format("{0} @{1}", NodeTypeToString(unary.NodeType, right == "NULL"), right);
+                var right = Recurse(unary.Operand,tableName, true);
+                return string.Format("[{0}].[{1}] @{2}", tableName, NodeTypeToString(unary.NodeType, right == "NULL"), right);
             }
             else if (expression is BinaryExpression body)
             {
-                string right = Recurse(body.Left);
-                return string.Format("{0} {1} @{2}", Recurse(body.Left), NodeTypeToString(body.NodeType, right == "NULL"), right);
+                string right = Recurse(body.Left, tableName);
+                return string.Format("[{0}].[{1}] {2} @{3}", tableName, Recurse(body.Left, tableName), NodeTypeToString(body.NodeType, right == "NULL"), right);
             }
             else if (expression is ConstantExpression constant)
             {
-                return ValueToString(constant.Value, isUnary, quote);
+                return ValueToString(constant.Value, isUnary);
             }
             else if (expression is MemberExpression member)
             {
@@ -35,14 +35,14 @@ namespace DapperRepository.Providers
                 {
                     if (isUnary && member.Type == typeof(bool))
                     {
-                        return string.Format("({0} = 1)", property.Name);
+                        return string.Format("([{0}].[{1}] = 1)", tableName, property.Name);
                     }
 
                     return property.Name;
                 }
                 else if (member.Member is FieldInfo)
                 {
-                    return ValueToString(GetValue(member), isUnary, quote);
+                    return ValueToString(GetValue(member), isUnary);
                 }
 
                 throw new Exception($"Expression does not refer to a property or field: {expression}");
@@ -52,21 +52,15 @@ namespace DapperRepository.Providers
                 // LIKE queries:
                 if (methodCall.Method == typeof(string).GetMethod("Contains", new[] { typeof(string) }))
                 {
-                    return string.Format("({0} LIKE '%@{1}%')", Recurse(methodCall.Object), Recurse(methodCall.Arguments[0], quote: false));
-
-                    //"(" + Recurse(methodCall.Object) + " LIKE '%" + Recurse(methodCall.Arguments[0], quote: false) + "%')";
+                    return string.Format("([{0}].[{1}] LIKE '%@{2}%')", tableName, Recurse(methodCall.Object, tableName), Recurse(methodCall.Arguments[0], tableName));
                 }
                 if (methodCall.Method == typeof(string).GetMethod("StartsWith", new[] { typeof(string) }))
                 {
-                    return string.Format("({0} LIKE '@{1}%')", Recurse(methodCall.Object), Recurse(methodCall.Arguments[0], quote: false));
-
-                    //return "(" + Recurse(methodCall.Object) + " LIKE '" + Recurse(methodCall.Arguments[0], quote: false) + "%')";
+                    return string.Format("(([{0}].[{1}] LIKE '@{2}%')", tableName, Recurse(methodCall.Object, tableName), Recurse(methodCall.Arguments[0], tableName));
                 }
                 if (methodCall.Method == typeof(string).GetMethod("EndsWith", new[] { typeof(string) }))
                 {
-                    return string.Format("({0} LIKE '%@{1}')", Recurse(methodCall.Object), Recurse(methodCall.Arguments[0], quote: false));
-
-                    //return "(" + Recurse(methodCall.Object) + " LIKE '%" + Recurse(methodCall.Arguments[0], quote: false) + "')";
+                    return string.Format("([{0}].[{1}] LIKE '%@{2}')", tableName, Recurse(methodCall.Object, tableName), Recurse(methodCall.Arguments[0], tableName));
                 }
                 // IN queries:
                 if (methodCall.Method.Name == "Contains")
@@ -92,17 +86,15 @@ namespace DapperRepository.Providers
                     var concated = string.Empty;
                     foreach (var e in values)
                     {
-                        concated += ValueToString(e, false, true) + ", ";
+                        concated += ValueToString(e, false) + ", ";
                     }
 
                     if (concated == string.Empty)
                     {
-                        return ValueToString(false, true, false);
+                        return ValueToString(false, true);
                     }
 
-                    return string.Format("({0} IN ({1}))", Recurse(property), concated.Substring(0, concated.Length - 2));
-
-                    //return "(" + Recurse(property) + " IN (" + concated.Substring(0, concated.Length - 2) + "))";
+                    return string.Format("([{0}].[{1}] IN ({2}))", tableName, Recurse(property, tableName), concated.Substring(0, concated.Length - 2));
                 }
 
                 throw new Exception("Unsupported method call: " + methodCall.Method.Name);
@@ -111,12 +103,12 @@ namespace DapperRepository.Providers
             throw new Exception("Unsupported expression: " + expression.GetType().Name);
         }
 
-        public string ValueToString(object value, bool isUnary, bool quote)
+        public string ValueToString(object value, bool isUnary)
         {
             if (value is bool)
             {
                 if (isUnary)
-                    return (bool)value ? "(1=1)" : "(1=0)";
+                    return (bool)value ? "(1 = 1)" : "(1 = 0)";
 
                 return (bool)value ? "1" : "0";
             }
